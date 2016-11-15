@@ -53,3 +53,6 @@ pip install --user -r requirements.txt
 
 Normally you want to call `./img2angle.py file.png`
 Or `./img2angle.py file1.png file2.png file3.png`. This will use all available cpu cores.
+
+The script b2i.py shows how to convert fonts or folder full of images - have look at the bottom: just configure the variable `type` to
+'IcoMoon' or 'helvetica' or look at all the other variables - it is quite simple.
