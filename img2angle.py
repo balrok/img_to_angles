@@ -8,10 +8,11 @@ import sys
 from PIL import Image, ImageFilter
 import PIL.ImageOps
 import math
-#import numpy
 import numpy as np
-#from filecache import filecache
 from tqdm import tqdm
+
+import multiprocessing
+from functools import partial
 
 
 def alpha_to_color(image:PIL.Image, color=255) -> PIL.Image:
@@ -110,8 +111,7 @@ def calc_polyfit(xpoints, ypoints, width, height):
     # this means: y = m * x + c
     return m,c
 
-#@filecache(60*60*24*14)
-def all_angles(filename, out_dir, invert=False, edge=150, filter=14, alphacolor=255, progress=True, size=(10, 10)):
+def all_angles(filename, out_dir=".", invert=False, edge=150, filter=14, alphacolor=255, progress=True, size=(10, 10)):
     simple_file = detect_edges(filename, out_dir, invert, edge, alphacolor, size)
 
     tiles = divide(simple_file, size)
@@ -119,14 +119,29 @@ def all_angles(filename, out_dir, invert=False, edge=150, filter=14, alphacolor=
     for tile in tqdm(tiles, disable=not progress, desc=filename):
         g = calc_angle(tile, filter)
         angles[tile.position[1]-1][tile.position[0]-1] = g
-    return angles, [simple_file, simple_file]
+    return angles, filename
+
+def all_angles_mp(filenames, cpu=-1, **kwargs):
+    if cpu == -1:
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    else:
+        pool = multiprocessing.Pool(cpu)
+    ret = {}
+    for res in pool.imap_unordered(partial(all_angles, **kwargs), filenames):
+        angles, fn = res
+        ret[fn] = angles
+    return ret
 
 if __name__ == "__main__":
     try:
         os.mkdir("out")
     except:
         pass
-    filename = sys.argv[1]
-
-    angles,simple_file = all_angles(filename, ".")
-    pprint.pprint(angles)
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+        angles,filename = all_angles(filename, "out")
+        pprint.pprint(angles)
+    if len(sys.argv) > 2:
+        filename = sys.argv[1:]
+        ret = all_angles_mp(filename, out_dir="out")
+        pprint.pprint(ret)

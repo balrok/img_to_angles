@@ -52,3 +52,4 @@ pip install --user -r requirements.txt
 ## Usage
 
 Normally you want to call `./img2angle.py file.png`
+Or `./img2angle.py file1.png file2.png file3.png`. This will use all available cpu cores.
