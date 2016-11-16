@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from img2angle import all_angles_mp
+from .img2angle import all_angles_mp
 import time
 import os
+from tempfile import TemporaryDirectory
 #from fontTools.ttLib import TTFont
 #from tqdm import tqdm
 
-def createImg(symbol, name, fontfile):
+def createImg(dir, symbol, name, fontfile):
     filename = '%s/%s.png' % (dir, name)
     if os.path.exists(filename):
         return
@@ -23,18 +24,22 @@ def createImg(symbol, name, fontfile):
     cropped=image.crop(imageBox)
     cropped.save(filename)
 
-def convert_font():
+def convert_font(fontfile, width, height, letters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"):
     # ttf = TTFont(fontfile, 0, verbose=0, allowVID=0, ignoreDecompileErrors=True, fontNumber=-1)
-    for letter in letters:
-        createImg(letter, letter, fontfile)
-    return all_angles_mp(["%s/%s.png"%(dir, letter) for letter in letters]
-                         , out_dir=out_dir, invert=True, edge=150, filter=14, alphacolor=255, size=(g_width, g_height))
+    with TemporaryDirectory() as out_dir:
+        for letter in letters:
+            createImg(out_dir, letter, letter, fontfile)
+        result = all_angles_mp(["%s/%s.png"%(out_dir, letter) for letter in letters]
+                         , out_dir=out_dir, invert=True, edge=150, filter=14, alphacolor=255, size=(width, height))
+    return result
 
-def convert_folder():
+def convert_folder(dir, width, height):
     # -4 removes file ending
-    chars = [x[:-4] for x in os.listdir(dir)]
-    return all_angles_mp(["%s/%s.png"%(dir, x) for x in chars]
-                           , out_dir=out_dir, invert=True, edge=150, filter=14, alphacolor=255, size=(g_width, g_height))
+    chars = [os.path.splitext(x)[0] for x in os.listdir(dir)]
+    with TemporaryDirectory() as out_dir:
+        result = all_angles_mp(["%s/%s.png"%(dir, x) for x in chars]
+                           , out_dir=out_dir, invert=True, edge=150, filter=14, alphacolor=255, size=(width, height))
+    return result
 
 if __name__ == "__main__":
 
@@ -42,8 +47,8 @@ if __name__ == "__main__":
 
     fontfile = ""
     letters = ""
-    g_width = 10
-    g_height = 10
+    width = 10
+    height = 10
     dir = ""
     out_dir = ""
 
@@ -53,8 +58,8 @@ if __name__ == "__main__":
     elif type == "helvetica_num_4x4":
         fontfile = "helveticaneuelight.ttf"
         letters = "0123456789"
-        g_width = 4
-        g_height = 4
+        width = 4
+        height = 4
     elif type == "helvetica":
         fontfile = "helveticaneuelight.ttf"
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"
@@ -72,9 +77,9 @@ if __name__ == "__main__":
         pass
 
     if fontfile != "":
-        res = convert_font()
+        res = convert_font(fontfile, width, height, letters)
     else:
-        res = convert_folder()
+        res = convert_folder(dir, width, height)
     res2 = {}
     for i in res:
         k = os.path.basename(i)[:-4]

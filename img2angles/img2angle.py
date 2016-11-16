@@ -3,7 +3,7 @@
 
 import pprint
 import os
-import image_slicer
+from . import image_slicer
 import sys
 from PIL import Image, ImageFilter
 import PIL.ImageOps
